@@ -2118,33 +2118,33 @@ class Tank {
     clearInterval(this.fireInterval);
   }
   fire(type) {
-    if (type === 2) {
-      if (!this.canPowermissle) return;
-      this.canPowermissle = false;
-      this.timers.powermissle = Date.now();
-      setTimeout(() => {
-        this.canPowermissle = true;
-      }, 10000);
-    } else if (type === 0) {
-      if (!this.canFire) return;
-      this.canFire = false;
-      clearTimeout(this.fireTimeout);
-      this.fireTimeout = setTimeout(() => {
-        this.canFire = true
-      }, this.fireType === 1 ? 200 : 600);
+      if (type === 2) {
+        if (!this.canPowermissle) return;
+        this.canPowermissle = false;
+        this.timers.powermissle = Date.now();
+        setTimeout(() => {
+          this.canPowermissle = true;
+        }, 10000);
+      } else if (type === 0) {
+        if (!this.canFire) return;
+        this.canFire = false;
+        clearTimeout(this.fireTimeout);
+        this.fireTimeout = setTimeout(() => {
+          this.canFire = true
+        }, this.fireType === 1 ? 200 : 600);
+      }
+      var fireType = ['grapple', 'megamissle', 'dynamite', 2].includes(type) ? 1 : this.fireType,
+        type = type === 2 ? (PixelTanks.userData.class === 'medic' ? 'healmissle' : 'powermissle') : (type === 0 ? (this.fireType === 1 ? 'bullet' : 'shotgun') : type),
+        l = fireType === 1 ? 0 : -10;
+      while (l < (fireType === 1 ? 1 : 15)) {
+        this.tank.fire.push({
+          ...toPoint(this.tank.r),
+          type: type,
+          r: this.tank.r
+        });
+        l += 5;
+      }
     }
-    var fireType = ['grapple', 'megamissle', 'dynamite', 2].includes(type) ? 1 : this.fireType,
-      type = type === 2 ? (PixelTanks.userData.class === 'medic' ? 'healmissle' : 'powermissle') : (type === 0 ? (this.fireType === 1 ? 'bullet' : 'shotgun') : type),
-      l = fireType === 1 ? 0 : -10;
-    while (l < (fireType === 1 ? 1 : 15)) {
-      this.tank.fire.push({
-        ...toPoint(this.tank.r + l),
-        type: type,
-        r: this.tank.r + l
-      });
-      l += 5;
-    }
-  }
   collision(x, y) {
     if (this.ded) return true;
     if (x < 0 || y < 0 || x + 80 > 3000 || y + 80 > 3000) return false;
