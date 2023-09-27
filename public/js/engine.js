@@ -203,154 +203,39 @@ class Engine {
 
 class Tank {
   constructor(data, host) {
-    this.raw = {};
-    this.render = {b: new Set(), s: new Set(), pt: new Set(), d: new Set(), ai: new Set()};
-    ['rank', 'username', 'cosmetic', 'color', 'damage', 'maxHp', 'hp', 'shields', 'team', 'x', 'y', 'r', 'ded', 'pushback', 'baseRotation', 'baseFrame', 'fire', 'damage', 'animation', 'buff', 'invis', 'id', 'class', 'flashbanged', 'dedEffect'].forEach(p => {
-      Object.defineProperty(this, p, {
-        get() {
-          return this.raw[p];
-        },
-        set(v) {
-          this.setValue(p, v);
-        },
-        configurable: true,
-      });
-    });
-    this.id = Math.random();
-    this.lastUpdate = 0;
-    if (data.socket) this.socket = data.socket; // multiplayer patch
-    this.username = data.username;
-    this.rank = data.rank;
-    this.class = data.class;
-    this.cosmetic = data.cosmetic;
-    this.deathEffect = data.deathEffect;
-    this.color = data.color;
-    this.damage = false;
-    this.maxHp = data.rank*10+300;
-    this.hp = this.maxHp;
-    this.canBashed = true;
-    this.shields = 0;
-    this.team = data.username+':'+Math.random();
-    this.x = host.spawn.x;
-    this.y = host.spawn.y;
-    this.r = 0;
-    this.pushback = 0;
-    this.baseRotation = 0;
-    this.baseFrame = 0;
-    this.fire = false;
-    this.host = host;
-    this.cells = [];
-    for (let dx = this.x/100, dy = this.y/100, i = 0; i < 4; i++) {
-      const cx = Math.max(0, Math.min(29, Math.floor(i < 2 ? dx : dx + 1))), cy = Math.max(0, Math.min(29, Math.floor(i % 2 ? dy : dy + 1)));
-      host.cells[cx][cy].add(this);
-      this.cells.push({x: cx, y: cy});
-    }
-    host.override(this);
+    // ... existing code ...
+
+    this.fKeyPressed = false; // Add a new property to track if the F key is pressed
   }
 
-  setValue(p, v) {
-    if (this.raw[p] === v) return;
-    this.updatedLast = Date.now();
-    this.raw[p] = v;
-  }
+  // ... existing methods ...
 
-  update() {
-    const cells = [];
-    for (let dx = this.x/100, dy = this.y/100, i = 0; i < 4; i++) {
-      const cx = Math.max(0, Math.min(29, Math.floor(i < 2 ? dx : dx + .8))), cy = Math.max(0, Math.min(29, Math.floor(i % 2 ? dy : dy + .8)));
-      this.host.cells[cx][cy].add(this);
-      cells.push({x: cx, y: cy});
-    }
-    for (const cell of this.cells.filter(c => {
-      for (const a of cells) if (a.x === c.x && a.y === c.y) return false;
-      return true;
-    })) this.host.cells[cell.x][cell.y].delete(this);
-    this.cells = cells;
-    if (this.dedEffect) this.dedEffect.time = Date.now() - this.dedEffect.start;
-    if (this.pushback !== 0) this.pushback += 0.5;
-    if (this.fire && getTeam(this.fire.team) !== getTeam(this.team)) this.damageCalc(this.x, this.y, .25, getUsername(this.fire.team));
-    for (const t of this.host.pt) {
-      if (this.username === t.username) continue;
-      if (this.class === 'medic' && !this.ded && !t.ded && (this.x-t.x)**2 + (this.y-t.y)**2 < 250000 && getTeam(this.team) === getTeam(t.team)) t.hp = Math.min(t.hp+.3, t.maxHp);
-      if (!this.immune || this.ded || !t.canBashed) continue;
-      if (!t.canBashed) continue;
-      if ((this.class === 'warrior' && getTeam(this.team) !== getTeam(t.team)) || (this.class === 'medic' && getTeam(this.team) === getTeam(t.team))) {
-        if (!collision(this.x, this.y, 80, 80, t.x, t.y, 80, 80)) continue;
-        t.damageCalc(t.x, t.y, this.class === 'warrior' ? 75 : -30, this.username);
-        t.canBashed = false;
-        setTimeout(() => {t.canBashed = true}, 400);
-      }
-    }
-    for (const ai of this.host.ai) {
-      if (this.class === 'medic' && !this.ded && (this.x-ai.x)**2 + (this.y-ai.y)**2 < 250000 && getTeam(this.team) === getTeam(ai.team)) ai.hp = Math.min(ai.hp+.3, ai.maxHp);
-      if (!this.immune || this.ded || !ai.canBashed) continue;
-      if ((this.class === 'warrior' && getTeam(this.team) !== getTeam(ai.team)) || (this.class === 'medic' && getTeam(this.team) === getTeam(ai.team))) {
-        if (!collision(this.x, this.y, 80, 80, ai.x, ai.y, 80, 80)) continue;
-        ai.damageCalc(ai.x, ai.y, this.class === 'warrior' ? 75 : -30, getUsername(this.team));
-        ai.canBashed = false;
-        setTimeout(() => {ai.canBashed = true}, 400);
-      }
-    }
-    for (const {x, y, type, team} of this.host.b) {
-      if (collision(this.x, this.y, 80, 80, x, y, 100, 100) && !this.ded && !this.immune) {
-        if (type === 'fire') {
-          if (this.fire) {
-            clearTimeout(this.fireTimeout);
-            this.fire = {team, frame: this.fire.frame};
-          } else {
-            this.fire = {team, frame: 0};
-            this.fireInterval ??= setInterval(() => this.fire.frame ^= 1, 50);
-          }
-          this.fireTimeout = setTimeout(() => {
-            clearInterval(this.fireInterval);
-            this.fire = false;
-          }, 4000);
-        } else if (type === 'spike' && getTeam(team) !== getTeam(this.team)) {
-          this.damageCalc(this.x, this.y, .5, getUsername(team));
+  healLowestHealthMember() {
+    let lowestHealthTank = null;
+
+    for (const tank of this.host.pt) {
+      if (getTeam(tank.team) === getTeam(this.team) && !tank.ded) {
+        if (!lowestHealthTank || tank.hp < lowestHealthTank.hp) {
+          lowestHealthTank = tank;
         }
       }
     }
-    if (this.damage) this.damage.y--;
-    if (this.grapple) this.grappleCalc();
-  }
 
-  damageCalc(x, y, a, u) {
-    if ((this.immune && a > 0) || this.ded) return;
-    if (this.shields > 0 &&  a > 0) return this.shields -= a;
-    this.hp = Math.max(Math.min(this.maxHp, this.hp-a), 0);
-    clearTimeout(this.damageTimeout);
-    this.damageTimeout = setTimeout(() => {this.damage = false}, 1000);
-    this.damage = {d: (this.damage ? this.damage.d : 0)+a, x, y};
-    if (this.hp <= 0 && this.host.ondeath) this.host.ondeath(this, this.host.pt.find(t => t.username === u));
-  }
-
-  grappleCalc() {
-    const dx = this.grapple.target.x - this.x;
-    const dy = this.grapple.target.y - this.y;
-    if (dx ** 2 + dy ** 2 > 400) {
-      const angle = Math.atan2(dy, dx);
-      const mx = Math.cos(angle) * 20;
-      const my = Math.sin(angle) * 20;
-      if (this.collision(this.x+mx, this.y)) this.x += mx;
-      if (this.collision(this.x, this.y+my)) this.y += my;
-      this.grapple.bullet.sx = this.x+40;
-      this.grapple.bullet.sy = this.y+40;
-      this.host.override(this, [{ key: 'x', value: this.x }, { key: 'y', value: this.y }]);
-      if ((!this.collision(this.x+mx, this.y) || Math.abs(mx) < 2) && (!this.collision(this.x, this.y+my) || Math.abs(my) < 2)) {
-        this.grapple.bullet.destroy();
-        this.grapple = false;
-      }
-    } else {
-      this.grapple.bullet.destroy();
-      this.grapple = false;
+    if (lowestHealthTank) {
+      lowestHealthTank.hp = Math.min(lowestHealthTank.hp + 50, lowestHealthTank.maxHp); // Heal the tank by 50 points
     }
   }
 
-  collision(x, y) {
-    if (x < 0 || y < 0 || x + 80 > 3000 || y + 80 > 3000) return false;
-    for (const b of this.host.b) if (collision(x, y, 80, 80, b.x, b.y, 100, 100) && b.c) return false;
-    return true;
+  update() {
+    // ... existing code ...
+
+    if (this.class === 'medic' && this.fKeyPressed) {
+      this.healLowestHealthMember();
+      this.fKeyPressed = false; // Reset the flag after healing
+    }
   }
+
+  // ... existing methods ...
 }
 
 class Block {
