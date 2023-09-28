@@ -90,6 +90,7 @@ class Engine {
       if (t.x % 100 < 20 && [225, 270, 315].includes(t.baseRotation)) this.b.push(new Block(Math.floor(t.x / 100) * 100 - 100, Math.floor(t.y / 100) * 100, 100, type, team, this));
       if ((t.y + 80) % 100 > 80 && [135, 180, 225].includes(t.baseRotation)) this.b.push(new Block(Math.floor(t.x / 100) * 100, Math.floor(t.y / 100) * 100 + 100, 100, type, team, this));
       if (t.y % 100 < 20 && [315, 0, 45].includes(t.baseRotation)) this.b.push(new Block(Math.floor(t.x / 100) * 100, Math.floor(t.y / 100) * 100 - 100, 100, type, team, this));
+      this.updateMap();
     }
     for (const e of use) {
       if (e === 'dynamite') {
@@ -127,6 +128,7 @@ class Engine {
             break;
           }
         }
+        this.updateMap();
       } else if (e === 'flashbang') {
         for (const tank of this.pt) {
           const bangTime = (500-Math.sqrt((t.x-tank.x)**2+(t.y-tank.y)**2))*5;
@@ -143,6 +145,7 @@ class Engine {
           const b = this.b[i];
           if (collision(t.x, t.y, 80, 80, b.x, b.y, 100, 100)) b.destroy();
         }
+        this.updateMap();
       } else if (e === 'turret') {
         this.ai = this.ai.filter(ai => getUsername(ai.team) !== t.username);
         this.ai.push(new AI(Math.floor(t.x / 100) * 100 + 10, Math.floor(t.y / 100) * 100 + 10, 0, t.rank, t.team, this));
@@ -156,6 +159,7 @@ class Engine {
     }
     if (airstrike) {
       this.b.push(new Block(airstrike.x, airstrike.y, Infinity, 'airstrike', parseTeamExtras(t.team), this));
+      this.updateMap();
     }
     if (fire.length > 0) {
       t.pushback = -6;
@@ -165,8 +169,8 @@ class Engine {
 
   tick() {
     this.ontick();
-    this.map = new PF.Grid(30, 30);
-    for (const b of this.b) if (b.x >= 0 && b.y >= 0 && b.x <= 2900 && b.y <= 2900) this.map.setWalkableAt(Math.floor(b.x / 100), Math.floor(b.y / 100), b.x % 100 !== 0 && b.y % 100 !== 0);
+    // this.map = new PF.Grid(30, 30);
+    // for (const b of this.b) if (b.x >= 0 && b.y >= 0 && b.x <= 2900 && b.y <= 2900) this.map.setWalkableAt(Math.floor(b.x / 100), Math.floor(b.y / 100), b.x % 100 !== 0 && b.y % 100 !== 0);
     for (const s of this.s) s.update();
     for (let i = this.ai.length-1; i >= 0; i--) this.ai[i].update();
     for (const t of this.pt) t.update();
@@ -198,6 +202,12 @@ class Engine {
         }
       }
     }
+    this.updateMap();
+  }
+
+  updateMap() {
+    this.map = new PF.Grid(30, 30);
+    for (const b of this.b) if (b.x >= 0 && b.y >= 0 && b.x <= 2900 && b.y <= 2900) this.map.setWalkableAt(Math.floor(b.x / 100), Math.floor(b.y / 100), b.x % 100 !== 0 && b.y % 100 !== 0);
   }
 }
 
@@ -379,6 +389,7 @@ class Block {
       this.cells.push({x: cx, y: cy});
     }
     this.u();
+    this.host.updateMap();
   }
 
   u() {
@@ -405,6 +416,7 @@ class Block {
     const index = this.host.b.indexOf(this);
     if (index !== -1) this.host.b.splice(index, 1);
     for (const cell of this.cells) this.host.cells[cell.x][cell.y].delete(this);
+    this.host.updateMap();
   }
 }
 
