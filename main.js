@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/node';
+/*import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import express from 'express';
 import expressWs from 'express-ws';
@@ -7,7 +7,12 @@ import {MongoClient} from 'mongodb';
 import msgpack from 'msgpack-lite';
 import Filter from 'bad-words';
 import TokenGenerator from 'uuid-token-generator';
-import {ffa} from './ffa-server.mjs';
+import {ffa} from './ffa-server.mjs';*/
+// Suggest transfer of modules from import to require, but I don't know how to fully do it.
+const Sentry = require('@sentry/node');
+const { ProfilingIntegration } = require('@sentry/profiling-node');
+const express = require('express');
+const expressWs = require('express-ws');
 
 const connectionString = 'mongodb+srv://cs641311:355608-G38@cluster0.z6wsn.mongodb.net/?retryWrites=true&w=majority', port = 80;
 
