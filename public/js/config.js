@@ -275,14 +275,14 @@ let images = {
         }
       };
 let menus = {
-        start: {
-          buttons: [
+    start: {
+        buttons: [
             [544, 648, 216, 116, function() {PixelTanks.auth(this.username, this.password, 'login')}, true],
             [840, 648, 216, 116, function() {PixelTanks.auth(this.username, this.password, 'signup')}, true],
             [564, 392, 456, 80, function() {this.type = 'username'}, false],
             [564, 520, 456, 80, function() {this.type = 'password'}, false],
-          ],
-          listeners: {
+        ],
+        listeners: {
             keydown: function(e) {
               if (e.key.length === 1) this[this.type] += e.key;
               if (e.keyCode === 8) this[this.type] = this[this.type].slice(0, -1);
@@ -298,7 +298,7 @@ let menus = {
             GUI.drawText(this.username, 574, 407, 50, '#000000', 0);
             GUI.drawText(this.password.replace(/./g, '*'), 574, 535, 50, '#000000', 0);
           },
-        },
+    },
         main: {
           buttons: [
             [972, 840, 88, 88, 'keybinds', true],
@@ -308,12 +308,12 @@ let menus = {
             [756, 840, 88, 88, 'crate', true],
             [864, 840, 88, 88, 'help', true],
             [532, 392, 536, 136, 'singleplayer', true],
-            /*[320, 920, 80, 80, function() {
-              clearInterval(PixelTanks.autosave);
-              PixelTanks.user.token = undefined;
-              PixelTanks.user.username = undefined;
-              Menus.trigger('start');
-            }],*/ // logout
+          /*[320, 920, 80, 80, function() {
+            clearInterval(PixelTanks.autosave);
+            PixelTanks.user.token = undefined;
+            PixelTanks.user.username = undefined;
+            Menus.trigger('start');
+          }],*/ // logout
           ],
           listeners: {},
           cdraw: function() {
