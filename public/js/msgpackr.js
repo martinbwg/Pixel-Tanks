@@ -2150,15 +2150,15 @@
 	}
 
 	function * packIterSync (objectIterator, options) {
-	  const packr = new Packr(options);
+	  const packrInstance = new Packr(options);
 	  for (const value of objectIterator) {
 	    yield packr.pack(value);
 	  }
 	}
 
 	async function * packIterAsync (objectIterator, options) {
-	  const packr = new Packr(options);
-	  for await (const value of objectIterator) {
+	  const packrInstance = new Packr(options);
+	  for (const value of objectIterator) {
 	    yield packr.pack(value);
 	  }
 	}
