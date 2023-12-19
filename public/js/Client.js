@@ -89,7 +89,10 @@ class Client {
     this.socket.on('connect', () => {
       this.socket.send(this.joinData);
       this.sendInterval = setInterval(() => this.send(), 1000/60);
-      this.getPing();
+      if (this._ups > 60) {
+      this._ups = 60;
+    }
+    this.getPing();
     });
     this.pinger = setInterval(() =>  {
       this.ops = this.ops.concat(this._ops).slice(-100);
