@@ -26,6 +26,7 @@ class PixelTanks {
     </style>`;
     Menus.scaler = document.createElement('CANVAS');
     GUI.canvas = document.createElement('CANVAS');
+    // Note: GUI is now referencing the NewGUI class
     GUI.draw = GUI.canvas.getContext('2d');
     GUI.draw.imageSmoothingEnabled = Menus.scaler.getContext('2d').imageSmoothingEnabled = false;
     document.body.appendChild(GUI.canvas);
