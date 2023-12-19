@@ -185,7 +185,7 @@ class Multiplayer extends Engine {
     this.ai = this.ai.filter(ai => Engine.getUsername(ai.team) !== socket.username);
     this.logs.push({m: this.rageMsg(socket.username), c: '#E10600'});
     if (this.pt.length === 0) {
-      this.i.forEach(i => clearInterval(i));
+      this.i.push(setInterval(() => this.send(), 1000/60));
       delete servers[socket.room];
     }
   }
@@ -206,6 +206,7 @@ class Multiplayer extends Engine {
 class FFA extends Multiplayer {
   constructor() {
     super(ffaLevels);
+    if (!settings.fps_boost) this.i.push(setInterval(() => this.send(), 1000/60));
   } 
 
   ondeath(t, m={}) {
