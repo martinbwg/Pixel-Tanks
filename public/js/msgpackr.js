@@ -241,27 +241,25 @@
 
 	function read() {
 		let token = src[position$1++];
-		if (token < 0xa0) {
-			if (token < 0x80) {
-				if (token < 0x40)
-					return token
-				else {
+				if (token < 0x40) {
+					return token;
+				} else if (token < 0x80) {
 					let structure = currentStructures[token & 0x3f] ||
 						currentUnpackr.getStructures && loadStructures()[token & 0x3f];
 					if (structure) {
 						if (!structure.read) {
 							structure.read = createStructureReader(structure, token & 0x3f);
 						}
-						return structure.read()
-					} else
-						return token
-				}
-			} else if (token < 0x90) {
-				// map
-				token -= 0x80;
-				if (currentUnpackr.mapsAsObjects) {
-					let object = {};
-					for (let i = 0; i < token; i++) {
+						return structure.read();
+					} else {
+						return token;
+					}
+				} else if (token < 0x90) {
+					// map
+					token -= 0x80;
+					if (currentUnpackr.mapsAsObjects) {
+						let object = {};
+						for (let i = 0; i < token; i++) {
 						let key = readKey();
 						if (key === '__proto__')
 							key = '__proto_';
