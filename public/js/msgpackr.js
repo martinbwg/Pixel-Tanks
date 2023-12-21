@@ -71,7 +71,7 @@
 					return this ? this.unpack(source, options) : Unpackr.prototype.unpack.call(defaultOptions, source, options)
 				})
 			}
-			if (!source.buffer && source.constructor === ArrayBuffer)
+			if (source instanceof ArrayBuffer)
 				source = typeof Buffer !== 'undefined' ? Buffer.from(source) : new Uint8Array(source);
 			if (typeof options === 'object') {
 				srcEnd = options.end || source.length;
@@ -88,7 +88,7 @@
 			// technique for getting data from a database where it can be copied into an existing buffer instead of creating
 			// new ones
 			try {
-				dataView = source.dataView || (source.dataView = new DataView(source.buffer, source.byteOffset, source.byteLength));
+				dataView = source.dataView ? source.dataView : new DataView(source.buffer, source.byteOffset, source.byteLength);
 			} catch(error) {
 				// if it doesn't have a buffer, maybe it is the wrong type of object
 				src = null;
@@ -116,12 +116,13 @@
 			try {
 				sequentialMode = true;
 				let size = source.length;
-				let value = this ? this.unpack(source, size) : defaultUnpackr.unpack(source, size);
 				if (forEach) {
+					let value = this ? this.unpack(source, size) : defaultUnpackr.unpack(source, size);
 					if (forEach(value, lastPosition, position$1) === false) return;
 					while(position$1 < size) {
 						lastPosition = position$1;
-						if (forEach(checkedRead(), lastPosition, position$1) === false) {
+						value = checkedRead();
+						if (forEach(value, lastPosition, position$1) === false) {
 							return
 						}
 					}
