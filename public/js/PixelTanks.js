@@ -1,12 +1,13 @@
 class PixelTanks {
   static start() {
-    PixelTanks.setup();
-    PixelTanks.boot();
+    PixelTanks.setup(function() {
+        PixelTanks.boot();
+    });
   }
 
   static setup() {
-    document.body.innerHTML += `
-    <style>
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
       html, body {
         margin: 0;
         max-height: 100vh;
@@ -23,9 +24,10 @@ class PixelTanks {
         font-family: 'Font';
         src: url('https://cs6413110.github.io/Pixel-Tanks/public/fonts/PixelOperator.ttf') format('truetype');
       }
-    </style>`;
-    Menus.scaler = document.createElement('CANVAS');
-    GUI.canvas = document.createElement('CANVAS');
+    `;
+    document.head.appendChild(styleElement);
+    Menus.scaler = document.createElement('canvas');
+    GUI.canvas = document.createElement('canvas');
     GUI.draw = GUI.canvas.getContext('2d');
     GUI.draw.imageSmoothingEnabled = Menus.scaler.getContext('2d').imageSmoothingEnabled = false;
     document.body.appendChild(GUI.canvas);
@@ -36,8 +38,8 @@ class PixelTanks {
     GUI.draw.setTransform(PixelTanks.resizer, 0, 0, PixelTanks.resizer, 0, 0);
     GUI.drawText('Loading Font', 800, 500, 50, '#fffff', 0.5);
     window.oncontextmenu = () => false;
-    window.addEventListener('resize', GUI.resize);
-    window.addEventListener('mousemove', Menus.mouseLog);
+    window.onresize = GUI.resize;
+    window.onmousemove = Menus.mouseLog;
   }
 
   static updateBootProgress(progress) {
