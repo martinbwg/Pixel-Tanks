@@ -10,14 +10,11 @@ class Damage {
     this.raw = {};
     this.id = Math.random();
     this.f = 0;
-    this.cells = new Set();
-    for (let dx = this.x/100, dy = this.y/100, i = 0; i < 4; i++) {
-      const cx = Math.max(0, Math.min(29, Math.floor(i < 2 ? dx : dx+w/100-.01))), cy = Math.max(0, Math.min(29, Math.floor(i % 2 ? dy : dy+h/100-.01)));
-      host.cells[cx][cy].add(this);
-      this.cells.add(cx+'x'+cy);
-    }
+// Spatial partitioning initialization - Quadtree
+    this.quadTreeRef = host.quadtree.insert({ x: this.x, y: this.y, width: this.w, height: this.h, damage: this });
     const cache = new Set();
-    for (const cell of this.cells) {
+    // Removed old cell-based spatial management comment
+    for (const e of entitiesInArea) { // Loop through entities
       const [cx, cy] = cell.split('x');
       for (const e of host.cells[cx][cy]) {
         if (cache.has(e.id)) continue;
@@ -47,11 +44,10 @@ class Damage {
 
   destroy() {
     clearInterval(this.i);
+    this.host.quadtree.remove(this.quadTreeRef);
     const index = this.host.d.indexOf(this);
-    if (index !== -1) this.host.d.splice(index, 1);
-    for (const cell of this.cells) {
-      const [x, y] = cell.split('x');
-      this.host.cells[x][y].delete(this);
+    if (index !== -1) {
+      this.host.d.splice(index, 1);
     }
   }
 }
