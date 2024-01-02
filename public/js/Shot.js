@@ -221,11 +221,23 @@ class Shot {
   }
 
   destroy() {
-    const index = this.host.s.indexOf(this);
-    if (index !== -1) this.host.s.splice(index, 1);
-    for (const cell of this.cells) {
-      const [x, y] = cell.split('x');
-      this.host.cells[x][y].delete(this);
+    // Return this shot to the pool for reuse instead of destroying
+    this.reset(); // Reset any state specific to this Shot instance
+    Shot.pool.returnToPool(this);
+  }
+
+  reset() {
+    // Optional method to reset properties of the Shot if necessary 
+  }
+
+  // Placeholder for Shot pool manager
+  static pool = {
+    items: [],
+    returnToPool(shot) {
+      this.items.push(shot);
+    },
+    getFromPool() {
+      return this.items.length ? this.items.pop() : null; // Placeholder implementation
     }
   }
 }
