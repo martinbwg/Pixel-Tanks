@@ -1,4 +1,6 @@
 class AI {
+  // Consider using machine learning techniques to improve
+  // AI behavior for a more challenging and interesting gameplay.
   constructor(x, y, role, rank, team, host) {
     this.raw = {};
     ['role', 'rank', 'username', 'cosmetic', 'cosmetic_hat', 'cosmetic_body', 'color', 'damage', 'maxHp', 'hp', 'shields', 'team', 'x', 'y', 'r', 'ded', 'reflect', 'pushback', 'baseRotation', 'baseFrame', 'fire', 'damage', 'animation', 'buff', 'invis', 'id', 'class', 'flashbanged', 'dedEffect'].forEach(p => {
