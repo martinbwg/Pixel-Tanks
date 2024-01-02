@@ -16,14 +16,7 @@ class Block {
         if (this.host.b.includes(this)) this.host.d.push(new Damage(this.x + Math.floor(Math.random()*250)-50, this.y + Math.floor(Math.random()*250)-50, 100, 100, 50, this.team, this.host));
       }, 5000+Math.random()*500);
     }
-    this.cells = new Set();
-    let dx = this.x/100, dy = this.y/100;
-    for (let i = 0; i < 4; i++) {
-      const cx = Math.max(0, Math.min(29, Math.floor(i < 2 ? dx : dx + .99))), cy = Math.max(0, Math.min(29, Math.floor(i % 2 === 0 ? dy : dy + .99)));
-      host.cells[cx][cy].add(this);
-      this.cells.add(cx+'x'+cy);
-    }
-    if (this.x % 100 === 0 && this.y % 100 === 0 && this.x >= 0 && this.x <= 2900 && this.y >= 0 && this.y <= 2900) host.map.setWalkableAt(Math.floor(dx), Math.floor(dy), false);
+    this.quadrant = host.quadtree.insert(this);
     this.u();
   }
 
@@ -50,13 +43,7 @@ class Block {
     clearTimeout(this.bar);
     const index = this.host.b.indexOf(this);
     if (index !== -1) this.host.b.splice(index, 1);
-    for (const cell of this.cells) {
-      const [x, y] = cell.split('x');
-      this.host.cells[x][y].delete(this);
-      let deletePathfindGrid = this.x % 100 === 0 && this.y % 100 === 0;
-      for (const e of this.host.cells[x][y]) if (e instanceof Block && e.x % 100 === 0 && e.y % 100 === 0) deletePathfindGrid = false;
-      if (deletePathfindGrid) this.host.map.setWalkableAt(x, y, true);
-    }
+    this.host.quadtree.remove(this.quadrant);
   }
 }
 if (module) module.exports = Block;
