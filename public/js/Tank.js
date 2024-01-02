@@ -32,10 +32,7 @@ class Tank {
     this.shields = this.r = this.pushback = this.baseRotation = this.baseFrame = this.lastUpdate = 0;
     this.host = host;
     this.privateLogs = [];
-    this.cells = new Set();
-    for (let dx = this.x/100, dy = this.y/100, i = 0; i < 4; i++) {
-      const cx = Math.max(0, Math.min(29, Math.floor(i < 2 ? dx : dx + .79))), cy = Math.max(0, Math.min(29, Math.floor(i % 2 ? dy : dy + .79)));
-      host.cells[cx][cy].add(this);
+    this.quadrant = host.quadtree.insert(this);
       this.cells.add(cx+'x'+cy);
     }
     host.override(this);
@@ -50,14 +47,8 @@ class Tank {
     const cells = new Set();
     for (let dx = this.x/100, dy = this.y/100, i = 0; i < 4; i++) {
       const cx = Math.max(0, Math.min(29, Math.floor(i < 2 ? dx : dx + .79))), cy = Math.max(0, Math.min(29, Math.floor(i % 2 ? dy : dy + .79)));
-      this.host.cells[cx][cy].add(this);
-      cells.add(`${cx}x${cy}`);
-    }
-    for (const cell of [...this.cells].filter(c => !cells.has(c))) {
-      const [x, y] = cell.split('x');
-      this.host.cells[x][y].delete(this);
-    }
-    this.cells = cells;
+    this.host.quadtree.remove(this.quadrant);
+    this.quadrant = host.quadtree.insert(this);
   }
 
   update() {
@@ -160,7 +151,8 @@ class Tank {
 
   collision(x, y) {
     if (x < 0 || y < 0 || x + 80 > 3000 || y + 80 > 3000) return false;
-    for (const b of this.host.b) if (Engine.collision(x, y, 80, 80, b.x, b.y, 100, 100) && b.c) return false;
+    const nearbyBlocks = this.host.quadtree.query(new Rectangle(x, y, 80, 80));
+    for (const b of nearbyBlocks) if (Engine.collision(x, y, 80, 80, b.x, b.y, 100, 100) && b.c) return false;
     return true;
   }
 }
