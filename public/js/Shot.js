@@ -1,5 +1,16 @@
 class Shot {
-  constructor(x, y, xm, ym, type, rotation, team, rank, host) {
+  static settings = {damage: {bullet: 20, shotgun: 20, grapple: 10, powermissle: 100, megamissle: 200, healmissle: -150, dynamite: 0, fire: 0, usb: 0}, speed: {bullet: 1, shotgun: .8, grapple: 2, powermissle: 1.5, megamissle: 1.5, healmissle: 1.5, dynamite: .8, fire: .9, usb: .8}, size: {healmissle: 150, powermissle: 50, megamissle: 100}};
+  static raw = ['team', 'r', 'type', 'x', 'y', 'sx', 'sy', 'id'];
+  constructor(x, y, r, type, team, rank, host) { // maybe change to x, y, r, type, team, rank, host
+    this.r = r;
+    this.type = type;
+    this.team = team;
+    this.host = host;
+    this.e = Date.now();
+    this.id = Math.random();
+    this.md = this.damage = Shot.settings.damage[type]*(rank*10+300)/500;
+    
+    
     this.team = team;
     this.r = rotation;
     this.type = type;
@@ -23,36 +34,6 @@ class Shot {
     this.u();
   }
 
-  static settings = {
-    damage: {
-      bullet: 20,
-      shotgun: 20,
-      grapple: 10,
-      powermissle: 100,
-      megamissle: 200,
-      healmissle: -200,
-      dynamite: 0,
-      fire: 0,
-      usb: 0,
-    },
-    speed: {
-      bullet: 1,
-      shotgun: .8,
-      grapple: 2,
-      powermissle: 1.5,
-      megamissle: 1.5,
-      healmissle: 1.5,
-      dynamite: .8,
-      fire: .9,
-      usb: .8,
-    },
-    size: {
-      healmissle: 75,
-      powermissle: 50,
-      megamissle: 100,
-    }
-  }
-
   static calc(x, y, xm, ym) {
     const r = 70;
     const a = xm === 0 ? 1000000 : ym / xm;
@@ -65,9 +46,8 @@ class Shot {
   }
 
   collision() {
-    const { host, x, y, type, cells} = this;
-    if (x < 0 || x > 3000 || y < 0 || y > 3000) {
-      if (type === 'grapple') {
+    if (this.x < 0 || this.x > 3000 || this.y < 0 || this.y > 3000) {
+      if (this.type === 'grapple') {
         const t = host.pt.find(t => t.username === Engine.getUsername(this.team));
         if (t.grapple) t.grapple.bullet.destroy();
         t.grapple = { target: { x: x, y: y }, bullet: this };
