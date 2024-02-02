@@ -1,5 +1,5 @@
 class Shot {
-  static settings = {damage: {bullet: 20, shotgun: 20, grapple: 10, powermissle: 100, megamissle: 200, healmissle: -150, dynamite: 0, fire: 0, usb: 0}, speed: {bullet: 6, shotgun: 4.8, grapple: 12, powermissle: 9, megamissle: 9, healmissle: 9, dynamite: 4.8, fire: 5.4, usb: 4.8}, size: {healmissle: 150, powermissle: 50, megamissle: 100}};
+  static settings = {damage: {bullet: 20, shotgun: 20, grapple: 10, powermissle: 100, megamissle: 200, healmissle: -150, dynamite: 0, fire: 0, usb: 0}, speed: {bullet: 6, shotgun: 4.8, grapple: 12, powermissle: 9, megamissle: 9, healmissle: 9, dynamite: 4.8, fire: 5.4, usb: 4.8}, size: {healmissle: 99, powermissle: 50, megamissle: 100}};
   static raw = ['team', 'r', 'type', 'x', 'y', 'sx', 'sy', 'id'];
   constructor() {
     for (const p of Shot.raw) Object.defineProperty(this, p, {set: v => this.setValue(p, v), configurable: true});
@@ -193,9 +193,9 @@ class Shot {
     this.u();
   }
 
-  u() {
+  setValue(p, v) {
     this.updatedLast = Date.now();
-    for (const property of ['team', 'r', 'type', 'x', 'y', 'sx', 'sy', 'id']) this.raw[property] = this[property];
+    this.raw[p] = v;
   }
 
   destroy() {
