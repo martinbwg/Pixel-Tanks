@@ -1,7 +1,11 @@
 class Shot {
-  static settings = {damage: {bullet: 20, shotgun: 20, grapple: 10, powermissle: 100, megamissle: 200, healmissle: -150, dynamite: 0, fire: 0, usb: 0}, speed: {bullet: 1, shotgun: .8, grapple: 2, powermissle: 1.5, megamissle: 1.5, healmissle: 1.5, dynamite: .8, fire: .9, usb: .8}, size: {healmissle: 150, powermissle: 50, megamissle: 100}};
+  static settings = {damage: {bullet: 20, shotgun: 20, grapple: 10, powermissle: 100, megamissle: 200, healmissle: -150, dynamite: 0, fire: 0, usb: 0}, speed: {bullet: 6, shotgun: 4.8, grapple: 12, powermissle: 9, megamissle: 9, healmissle: 9, dynamite: 4.8, fire: 5.4, usb: 4.8}, size: {healmissle: 150, powermissle: 50, megamissle: 100}};
   static raw = ['team', 'r', 'type', 'x', 'y', 'sx', 'sy', 'id'];
-  constructor(x, y, r, type, team, rank, host) { // maybe change to x, y, r, type, team, rank, host
+  constructor() {
+    for (const p of Shot.raw) Object.defineProperty(this, p, {set: v => this.setValue(p, v), configurable: true});
+    this.cells = new Set();
+  }
+  init(x, y, r, type, team, rank, host) {
     this.r = r;
     this.type = type;
     this.team = team;
@@ -9,43 +13,42 @@ class Shot {
     this.e = Date.now();
     this.id = Math.random();
     this.md = this.damage = Shot.settings.damage[type]*(rank*10+300)/500;
-    
-    
-    this.team = team;
-    this.r = rotation;
-    this.type = type;
-    this.host = host;
-    this.e = Date.now();
-    this.raw = {};
-    this.id = Math.random();
-    this.md = this.damage = Shot.settings.damage[type]*(rank*10+300)/500;
-    const factor = 6/Math.sqrt(xm**2+ym**2);
-    this.xm = xm*factor*Shot.settings.speed[type];
-    this.ym = ym*factor*Shot.settings.speed[type];
-    const data = Shot.calc(x, y, xm, ym);
-    this.sx = this.x = data.x-5;
-    this.sy = this.y = data.y-5;
-    this.cells = new Set();
+    this.xm = Math.cos(r)*Shot.settings.speed[type];
+    this.ym = Math.sin(r)*Shot.settings.speed[type];
+    this.x = this.sx = this.xm*11.66;
+    this.y = this.sy = this.ym*11.66;
     for (let dx = this.x/100, dy = this.y/100, i = 0; i < 4; i++) {
       const cx = Math.max(0, Math.min(29, Math.floor(i < 2 ? dx : dx+.09))), cy = Math.max(0, Math.min(29, Math.floor(i % 2 ? dy : dy+.09)));
       host.cells[cx][cy].add(this);
       this.cells.add(cx+'x'+cy);
     }
-    this.u();
   }
 
-  static calc(x, y, xm, ym) {
-    const r = 70;
-    const a = xm === 0 ? 1000000 : ym / xm;
-    const b = xm === 0 ? 0 : (a > 0 ? -1 : 1);
-    const c = Math.sqrt(r**2+(r*a)**2);
-    const d = r*c;
-    const cx = -r*b*d/c**2;
-    const cy = Math.abs(r*a)*d/c**2;
-    return {x: x+cx*(ym >= 0 ? 1 : -1), y: y+cy*(ym >= 0 ? 1 : -1)};
+  grapple(username, ) {} // code for setting grapple data of players
+
+  handleActions() {
   }
 
   collision() {
+    /*Hit Priority
+    Grapple:
+    1.) Enemy players
+    2.) Friendly players
+    3.) Blocks
+    4.) AI(team irrelevant)
+    5.) World Border
+
+    Bullets:
+    1.) Blocks
+    2.) AI enemies
+    3.) Player enemies
+    4.) Player friends
+    5.) AI friends
+    6.) World Border
+
+    Missles:
+    doesn't matter
+    */
     if (this.x < 0 || this.x > 3000 || this.y < 0 || this.y > 3000) {
       if (this.type === 'grapple') {
         const t = host.pt.find(t => t.username === Engine.getUsername(this.team));
@@ -196,8 +199,7 @@ class Shot {
   }
 
   destroy() {
-    const index = this.host.s.indexOf(this);
-    if (index !== -1) this.host.s.splice(index, 1);
+    this.host.s.splice(this.host.s.indexOf(this), 1);
     for (const cell of this.cells) {
       const [x, y] = cell.split('x');
       this.host.cells[x][y].delete(this);
