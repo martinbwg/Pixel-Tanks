@@ -23,12 +23,39 @@ class Shot {
       this.cells.add(cx+'x'+cy);
     }
   }
-
-  grapple(username, ) {} // code for setting grapple data of players
-
-  handleActions() {
+  collide(e) {
+    let size = Shot.settings.size[this.type], o = size/2+10, isBlock = e instanceof Block, pullGrapple = isBlock || !e;
+    if (size) this.host.d.push(new Damage(this.x-o, this.y-o, size, size, this.damage, this.team, this.host));
+    if (this.type === 'dynamite' || this.type === 'usb' || this.type === 'grapple') {
+      const g = pullGrapple ? this.host.pt.find(t => t.username === Engine.getUsername(this.team)) : e;
+      this.target = g;
+      this.offset = [g.x-this.x, g.y-this.y];
+      this.update = pullGrapple ? () => {} : this.dynaUpdate;
+      //block grappel :) const t = host.pt.find(t => t.username === Engine.getUsername(this.team));
+        if (t.grapple) t.grapple.bullet.destroy();
+        t.grapple = { target: { x: x, y: y }, bullet: this };
+        this.update = () => {};
+        return false;//
+      //tank grapple if (e.grapple) e.grapple.bullet.destroy();
+            e.grapple = {target: host.pt.find(tank => tank.username === Engine.getUsername(this.team)), bullet: this};
+            this.target = e;
+            this.offset = [e.x-x, e.y-y];
+            this.update = this.dynaUpdate;
+            return false;
+    } else if (this.type === 'fire') {
+      if (isBlock) return this.host.b.push(A.template('Block').init(e.x, e.y, Infinity, 'fire', this.team, this.host));
+      if (e.immune) return true;
+      // restructure fire to use e.fire = {team: this.team, time: Date.now()}
+      clearTimeout(e.fireTimeout);
+      e.fire = {team: this.team, frame: e.fire?.frame || 0};
+      e.fireInterval ??= setInterval(() => e.fire.frame ^= 1, 50); // OPTIMIZE make gui effects render by date time not by server interval
+      e.fireTimeout = setTimeout(() => {
+        clearInterval(e.fireInterval);
+        e.fire = false;
+      }, 4000);
+      return true;
+    }
   }
-
   collision() {
     /*Hit Priority
     Grapple:
