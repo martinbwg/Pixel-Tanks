@@ -23,27 +23,24 @@ class Shot {
   }
   collide(e) {
     let size = Shot.settings.size[this.type], o = size/2+10, isBlock = e instanceof Block, pullGrapple = isBlock || !e;
-    if (size) this.host.d.push(new Damage(this.x-o, this.y-o, size, size, this.damage, this.team, this.host));
+    if (size) this.host.d.push(new Damage(this.x-o, this.y-o, size, size, this.damage, this.team, this.host)); // damage change to square hitbox?
     if (this.type === 'dynamite' || this.type === 'usb' || this.type === 'grapple') {
       const g = pullGrapple ? this.host.pt.find(t => t.username === Engine.getUsername(this.team)) : e;
       this.target = g;
       this.offset = [g.x-this.x, g.y-this.y];
       this.update = pullGrapple ? () => {} : this.dynaUpdate;
-      if (g.grapple) g.grapple.bullet.destroy();
-      g.grapple = {target: pullGrapple ? {x: e.x, y: e.y} : this.host.pt.find(t => t.username === Engine.getUsername(this.team)), bullet: this};
+      if (this.type === 'grapple') {
+        if (g.grapple) g.grapple.bullet.destroy();
+        g.grapple = {target: pullGrapple ? {x: e.x, y: e.y} : this.host.pt.find(t => t.username === Engine.getUsername(this.team)), bullet: this};
+      }
       return false;
     } else if (this.type === 'fire') {
       if (isBlock) return this.host.b.push(A.template('Block').init(e.x, e.y, Infinity, 'fire', this.team, this.host));
       if (e.immune) return true;
-      // restructure fire to use e.fire = {team: this.team, time: Date.now()}
-      clearTimeout(e.fireTimeout);
-      e.fire = {team: this.team, frame: e.fire?.frame || 0};
-      e.fireInterval ??= setInterval(() => e.fire.frame ^= 1, 50); // OPTIMIZE make gui effects render by date time not by server interval
-      e.fireTimeout = setTimeout(() => {
-        clearInterval(e.fireInterval);
-        e.fire = false;
-      }, 4000);
+      e.fire = {team: this.team, time: Date.now(), frame: 0}; // FIRE TEMP FIX static frame
       return true;
+    } else if (this.type === 'bullet') {
+    } else if (this.type === 'shotgun') {
     }
   }
   collision() {
