@@ -1,27 +1,25 @@
 class Shot {
   static settings = {damage: {bullet: 20, shotgun: 20, grapple: 10, powermissle: 100, megamissle: 200, healmissle: -150, dynamite: 0, fire: 0, usb: 0}, speed: {bullet: 6, shotgun: 4.8, grapple: 12, powermissle: 9, megamissle: 9, healmissle: 9, dynamite: 4.8, fire: 5.4, usb: 4.8}, size: {healmissle: 99, powermissle: 50, megamissle: 100}};
+  static args = ['x', 'y', 'r', 'type', 'team', 'rank', 'host'];
   static raw = ['team', 'r', 'type', 'x', 'y', 'sx', 'sy', 'id'];
   constructor() {
-    for (const p of Shot.raw) Object.defineProperty(this, p, {set: v => this.setValue(p, v), configurable: true});
+    for (const p of Shot.raw) Object.defineProperty(this, p, {get: () => this.raw[p], set: v => this.setValue(p, v), configurable: true});
     this.cells = new Set();
   }
   init(x, y, r, type, team, rank, host) {
-    this.r = r;
-    this.type = type;
-    this.team = team;
-    this.host = host;
+    for (const i in Shot.args) this[Shot.args[i]] = arguments[i];
     this.e = Date.now();
     this.id = Math.random();
     this.md = this.damage = Shot.settings.damage[type]*(rank*10+300)/500;
-    this.xm = Math.cos(r)*Shot.settings.speed[type];
-    this.ym = Math.sin(r)*Shot.settings.speed[type];
-    this.x = this.sx = this.xm*11.66;
-    this.y = this.sy = this.ym*11.66;
-    for (let dx = this.x/100, dy = this.y/100, i = 0; i < 4; i++) {
-      const cx = Math.max(0, Math.min(29, Math.floor(i < 2 ? dx : dx+.09))), cy = Math.max(0, Math.min(29, Math.floor(i % 2 ? dy : dy+.09)));
-      host.cells[cx][cy].add(this);
-      this.cells.add(cx+'x'+cy);
+    this.x = this.sx = (this.xm = Math.cos(r)*Shot.settings.speed[type])*11.66;
+    this.y = this.sy = (this.ym = Math.sin(r)*Shot.settings.speed[type])*11.66;
+    for (let x = Math.max(0, Math.min(29, Math.floor(this.x/100)); x <= Math.max(0, Math.min(29, Math.floor((this.x+10)/100))); x++) {
+      for (let y = Math.max(0, Math.min(29, Math.floor(this.y/100)); y <= Math.max(0, Math.min(29, Math.floor((this.y+10)/100))); y++) {
+        host.cells[x][y].add(this);
+        this.cells.add(x+'x'+y);
+      }
     }
+    return this;
   }
   collide(e) {
     let size = Shot.settings.size[this.type], o = size/2+10, isBlock = e instanceof Block, pullGrapple = isBlock || !e;
@@ -31,17 +29,9 @@ class Shot {
       this.target = g;
       this.offset = [g.x-this.x, g.y-this.y];
       this.update = pullGrapple ? () => {} : this.dynaUpdate;
-      //block grappel :) const t = host.pt.find(t => t.username === Engine.getUsername(this.team));
-        if (t.grapple) t.grapple.bullet.destroy();
-        t.grapple = { target: { x: x, y: y }, bullet: this };
-        this.update = () => {};
-        return false;//
-      //tank grapple if (e.grapple) e.grapple.bullet.destroy();
-            e.grapple = {target: host.pt.find(tank => tank.username === Engine.getUsername(this.team)), bullet: this};
-            this.target = e;
-            this.offset = [e.x-x, e.y-y];
-            this.update = this.dynaUpdate;
-            return false;
+      if (g.grapple) g.grapple.bullet.destroy();
+      g.grapple = {target: pullGrapple ? {x: e.x, y: e.y} : this.host.pt.find(t => t.username === Engine.getUsername(this.team)), bullet: this};
+      return false;
     } else if (this.type === 'fire') {
       if (isBlock) return this.host.b.push(A.template('Block').init(e.x, e.y, Infinity, 'fire', this.team, this.host));
       if (e.immune) return true;
