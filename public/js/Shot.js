@@ -22,8 +22,8 @@ class Shot {
     return this;
   }
   collide(e) {
-    let size = Shot.settings.size[this.type], o = size/2+10, isBlock = e instanceof Block, pullGrapple = isBlock || !e;
-    if (size) this.host.d.push(new Damage(this.x-o, this.y-o, size, size, this.damage, this.team, this.host)); // damage change to square hitbox?
+    let size = Shot.settings.size[this.type], o = size/2+10, isBlock = e instanceof Block, pullGrapple = (isBlock || !e) && this.type === 'grapple';
+    if (size) this.host.d.push(new Damage(this.x-o, this.y-o, size, size, this.damage, this.team, this.host)); // damage change to square instead of rect hitbox?
     if (this.type === 'dynamite' || this.type === 'usb' || this.type === 'grapple') {
       const g = pullGrapple ? this.host.pt.find(t => t.username === Engine.getUsername(this.team)) : e;
       this.target = g;
@@ -36,134 +36,26 @@ class Shot {
       return false;
     } else if (this.type === 'fire') {
       if (isBlock) return this.host.b.push(A.template('Block').init(e.x, e.y, Infinity, 'fire', this.team, this.host));
-      if (e.immune) return true;
-      e.fire = {team: this.team, time: Date.now(), frame: 0}; // FIRE TEMP FIX static frame
-      return true;
-    } else if (this.type === 'bullet') {
-    } else if (this.type === 'shotgun') {
+      if (!e.immune) e.fire = {team: this.team, time: Date.now()};
+    } else if (Shot.settings.size[this.type]) {
+      let size = Shot.settings.size[this.type], offset = size/2+10;
+      this.host.d.push(new Damage(x-offset, y-offset, size, size, this.damage, this.team, this.host));
+    } else if (Engine.getTeam(e.team) !== Engine.getTeam(this.team) && e) {
+      if (isBlock) e.damage(this.damage); else e.damageCalc(this.x, this.y, this.damage, Engine.getUsername(this.team));
     }
+    return true;
   }
   collision() {
-    /*Hit Priority
-    Grapple:
-    1.) Enemy players
-    2.) Friendly players
-    3.) Blocks
-    4.) AI(team irrelevant)
-    5.) World Border
-
-    Bullets:
-    1.) Blocks
-    2.) AI enemies
-    3.) Player enemies
-    4.) Player friends
-    5.) AI friends
-    6.) World Border
-
-    Missles:
-    doesn't matter
-    */
-    if (this.x < 0 || this.x > 3000 || this.y < 0 || this.y > 3000) {
-      if (this.type === 'grapple') {
-        const t = host.pt.find(t => t.username === Engine.getUsername(this.team));
-        if (t.grapple) t.grapple.bullet.destroy();
-        t.grapple = { target: { x: x, y: y }, bullet: this };
-        this.update = () => {};
-        return false;
-      } else if (type === 'dynamite') {
-        this.update = () => {}
-        return false;
-      } else {
-        if (Shot.settings.size[type]) host.d.push(new Damage(x - Shot.settings.size[type] / 2 + 10, y - Shot.settings.size[type] / 2 + 10, Shot.settings.size[type], Shot.settings.size[type], this.damage, this.team, host));
-        return true;
-      }
-    }
-    for (const cell of cells) { 
-      const [cx, cy] = cell.split('x');
-      for (const e of host.cells[cx][cy]) {
-        if (e instanceof Tank) {
-          if (e.ded || !Engine.collision(x, y, 10, 10, e.x, e.y, 80, 80)) continue;
-          if (type === 'grapple') {
-            if (e.grapple) e.grapple.bullet.destroy();
-            e.grapple = {target: host.pt.find(tank => tank.username === Engine.getUsername(this.team)), bullet: this};
-            this.target = e;
-            this.offset = [e.x-x, e.y-y];
-            this.update = this.dynaUpdate;
-            return false;
-          } else if (type === 'dynamite' || type === 'usb') {
-            this.target = e;
-            this.offset = [e.x-x, e.y-y];
-            this.update = this.dynaUpdate;
-            if (type === 'usb') setTimeout(() => this.destroy(), 20000);
-            return false;
-          } else if (type === 'fire') {
-            if (e.immune) return true;
-            if (e.fire) clearTimeout(e.fireTimeout);
-            e.fire = { team: this.team, frame: e.fire?.frame || 0 };
-            e.fireInterval ??= setInterval(() => e.fire.frame ^= 1, 50); // OPTIMIZE make gui effects render by date time not by server interval
-            e.fireTimeout = setTimeout(() => {
-              clearInterval(e.fireInterval);
-              e.fire = false;
-            }, 4000);
-            return true;
-          } else {
-            if (Shot.settings.size[type]) {
-              host.d.push(new Damage(x - Shot.settings.size[type] / 2 + 10, y - Shot.settings.size[type] / 2 + 10, Shot.settings.size[type], Shot.settings.size[type], this.damage, this.team, host));
-            } else if (Engine.getTeam(e.team) !== Engine.getTeam(this.team)) {
-              e.damageCalc(x, y, this.damage, Engine.getUsername(this.team));
-            }
-            return true;
-          }
-        } else if (e instanceof Block) {
-          if (!e.c || !Engine.collision(e.x, e.y, 100, 100, x, y, 10, 10)) continue;
-          if (type === 'grapple' || type === 'dynamite') {
-            if (type === 'grapple') {
-              const t = this.host.pt.find(t => t.username === Engine.getUsername(this.team));
-              if (t.grapple) t.grapple.bullet.destroy();
-              t.grapple = {target: e, bullet: this}
-            }
-            this.update = () => {};
-            return false;
-          } else {
-            if (type === 'fire') host.b.push(A.template('Block').init(e.x, e.y, Infinity, 'fire', this.team, host));
-            if (Shot.settings.size[type]) {
-              host.d.push(new Damage(x - Shot.settings.size[type] / 2 + 10, y - Shot.settings.size[type] / 2 + 10, Shot.settings.size[type], Shot.settings.size[type], this.damage, this.team, host));
-            } else if (type !== 'fire') {
-              e.damage(this.damage);
-            }
-            return true;
-          }
-        } else if (e instanceof AI) {
-          if (!Engine.collision(x, y, 10, 10, e.x, e.y, 80, 80)) continue;
-          if (type === 'dynamite' || type === 'usb') {
-            this.target = e;
-            this.offset = [e.x-x, e.y-y];
-            this.update = this.dynaUpdate;
-            if (type === 'usb') setTimeout(() => this.destroy(), 15000);
-            return false;
-          } else if (type === 'fire') {
-            if (e.fire) clearTimeout(e.fireTimeout);
-            e.fire = {team: this.team, frame: e.fire?.frame || 0};
-            e.fireInterval ??= setInterval(() => e.fire.frame ^= 1, 50);
-            e.fireTimeout = setTimeout(() => {
-              clearInterval(e.fireInterval);
-              e.fire = false;
-            }, 4000);
-            return true;
-          } else {
-            if (Shot.settings.size[type]) {
-              host.d.push(new Damage(x - Shot.settings.size[type] / 2 + 10, y - Shot.settings.size[type] / 2 + 10, Shot.settings.size[type], Shot.settings.size[type], this.damage, this.team, host));
-            } else if (Engine.getTeam(e.team) !== Engine.getTeam(this.team)) {
-              e.damageCalc(x, y, this.damage, Engine.getUsername(this.team));
-            }
-            return true;
-          }
-        }
+    if (this.x < 0 || this.x > 3000 || this.y < 0 || this.y > 3000) this.collide();
+    for (const cell of this.cells) {
+      const c = cell.split('x');
+      for (const e of [...this.host.cells[c[0]][c[1]]].sort(this.sorter)) {
+        let size = e instanceof Block || e.role === 0 ? 100 : 80;
+        if (!e.ded && !e.c && Engine.collision(this.x, this.y, 10, 10, e.x, e.y, size, size)) return this.collide(e);
       }
     }
     return false;
   }
-
   dynaUpdate() {
     this.oldx = this.x;
     this.oldy = this.y;
