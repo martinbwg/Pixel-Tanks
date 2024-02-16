@@ -1,5 +1,5 @@
 class Shot {
-  static settings = {damage: {bullet: 20, shotgun: 20, grapple: 10, powermissle: 100, megamissle: 200, healmissle: -150, dynamite: 0, fire: 0, usb: 0}, speed: {bullet: 6, shotgun: 4.8, grapple: 12, powermissle: 9, megamissle: 9, healmissle: 9, dynamite: 4.8, fire: 5.4, usb: 4.8}, size: {healmissle: 99, powermissle: 50, megamissle: 100}};
+  static settings = {bullet: [20, 6], shotgun: [20, 4.8], grapple: [0, 12], powermissle: [100, 9, 50], megamissle: [200, 9, 100], healmissle: [-150, 9, 99]};
   static args = ['x', 'y', 'r', 'type', 'team', 'rank', 'host'];
   static raw = ['team', 'r', 'type', 'x', 'y', 'sx', 'sy', 'id'];
   constructor() {
@@ -10,9 +10,9 @@ class Shot {
     for (const i in Shot.args) this[Shot.args[i]] = arguments[i];
     this.e = Date.now();
     this.id = Math.random();
-    this.md = this.damage = Shot.settings.damage[type]*(rank*10+300)/500;
-    this.x = this.sx = (this.xm = Math.cos(r)*Shot.settings.speed[type])*11.66;
-    this.y = this.sy = (this.ym = Math.sin(r)*Shot.settings.speed[type])*11.66;
+    this.md = this.damage = Shot.settings[this.type][0]*(rank*10+300)/500;
+    this.x = this.sx = (this.xm = Math.cos(r)*Shot.settings[this.type][1])*11.66;
+    this.y = this.sy = (this.ym = Math.sin(r)*Shot.settings[this.type][1])*11.66;
     for (let x = Math.max(0, Math.min(29, Math.floor(this.x/100)); x <= Math.max(0, Math.min(29, Math.floor((this.x+10)/100))); x++) {
       for (let y = Math.max(0, Math.min(29, Math.floor(this.y/100)); y <= Math.max(0, Math.min(29, Math.floor((this.y+10)/100))); y++) {
         host.cells[x][y].add(this);
@@ -22,7 +22,7 @@ class Shot {
     return this;
   }
   collide(e) {
-    let size = Shot.settings.size[this.type], o = size/2+10, isBlock = e instanceof Block, pullGrapple = (isBlock || !e) && this.type === 'grapple';
+    let size = Shot.settings[this.type][2], o = size/2+10, isBlock = e instanceof Block, pullGrapple = (isBlock || !e) && this.type === 'grapple';
     if (size) this.host.d.push(new Damage(this.x-o, this.y-o, size, size, this.damage, this.team, this.host)); // damage change to square instead of rect hitbox?
     if (this.type === 'dynamite' || this.type === 'usb' || this.type === 'grapple') {
       const g = pullGrapple ? this.host.pt.find(t => t.username === Engine.getUsername(this.team)) : e;
@@ -37,9 +37,8 @@ class Shot {
     } else if (this.type === 'fire') {
       if (isBlock) return this.host.b.push(A.template('Block').init(e.x, e.y, Infinity, 'fire', this.team, this.host));
       if (!e.immune) e.fire = {team: this.team, time: Date.now()};
-    } else if (Shot.settings.size[this.type]) {
-      let size = Shot.settings.size[this.type], offset = size/2+10;
-      this.host.d.push(new Damage(x-offset, y-offset, size, size, this.damage, this.team, this.host));
+    } else if (size) {
+      this.host.d.push(new Damage(x-o, y-o, size, size, this.damage, this.team, this.host));
     } else if (Engine.getTeam(e.team) !== Engine.getTeam(this.team) && e) {
       if (isBlock) e.damage(this.damage); else e.damageCalc(this.x, this.y, this.damage, Engine.getUsername(this.team));
     }
