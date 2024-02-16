@@ -28,7 +28,7 @@ class Shot {
       const g = pullGrapple ? this.host.pt.find(t => t.username === Engine.getUsername(this.team)) : e;
       this.target = g;
       this.offset = [g.x-this.x, g.y-this.y];
-      this.update = pullGrapple ? () => {} : this.dynaUpdate;
+      if (pullGrapple) this.update = () => {};
       if (this.type === 'grapple') {
         if (g.grapple) g.grapple.bullet.destroy();
         g.grapple = {target: pullGrapple ? {x: e.x, y: e.y} : this.host.pt.find(t => t.username === Engine.getUsername(this.team)), bullet: this};
@@ -46,7 +46,7 @@ class Shot {
     return true;
   }
   collision() {
-    if (this.x < 0 || this.x > 3000 || this.y < 0 || this.y > 3000) this.collide();
+    if (this.x < 0 || this.y < 0 || this.x > 3000 || this.y > 3000) this.collide();
     for (const cell of this.cells) {
       const c = cell.split('x');
       for (const e of [...this.host.cells[c[0]][c[1]]].sort(this.sorter)) {
@@ -56,18 +56,19 @@ class Shot {
     }
     return false;
   }
-  dynaUpdate() {
+  update() {
     this.oldx = this.x;
     this.oldy = this.y;
-    this.x = this.target.x - this.offset[0];
-    this.y = this.target.y - this.offset[1];
-    this.cellUpdate();
-    this.u();
-    if (this.target.ded) this.destroy();
-    if (this.host.pt.find(t => t.username === Engine.getUsername(this.team))?.ded) this.destroy();
-  }
-
-  cellUpdate() {
+    const time = Math.floor((Date.now()-this.e)/5), x = this.target?.x || time*this.xm+this.sx, y = this.target?.y || time*this.ym+this.sy;
+    let x1 = this.x
+    if (0|(this.x/100) !== 0|(x/100) || 0|(this.y/100) !== 0|(y/100) || 0|((this.x+10)/100) !== 0|((x+10)/100) || 0|((this.y+10)/100) !== 0|((y+10)/100)) {
+      for (let ) {
+        
+      }
+    }
+    this.x = x;
+    this.y = y;
+    
     if (Math.floor(this.oldx/100) !== Math.floor(this.x/100) || Math.floor(this.oldy/100) !== Math.floor(this.y/100) || Math.floor((this.oldx+10)/100) !== Math.floor((this.x+10)/100) || Math.floor((this.oldy+10)/100) !== Math.floor((this.y+10)/100)) { 
       const cells = new Set();
       for (let dx = this.x/100, dy = this.y/100, i = 0; i < 4; i++) {
@@ -81,29 +82,17 @@ class Shot {
       }
       this.cells = cells;
     }
-  }
-
-  update() {
-    const time = Math.floor((Date.now()-this.e)/5);
-    this.oldx = this.x;
-    this.oldy = this.y;
-    this.x = time*this.xm+this.sx;
-    this.y = time*this.ym+this.sy;
-    this.cellUpdate();
-    if (this.collision()) this.destroy();
+    if (this.collision() || (this.target && (this.target?.ded || this.host.pt.find(t => t.username === Engine.getUsername(this.team))?.ded))) this.destroy();
     if (this.type === 'shotgun') {
       this.d = Math.sqrt((this.x - this.sx) ** 2 + (this.y - this.sy) ** 2);
       this.damage = this.md - (this.d / 300) * this.md;  
       if (this.d >= 300) this.destroy();
     } else if (this.type === 'dynamite') this.r += 5;
-    this.u();
   }
-
   setValue(p, v) {
     this.updatedLast = Date.now();
     this.raw[p] = v;
   }
-
   destroy() {
     this.host.s.splice(this.host.s.indexOf(this), 1);
     for (const cell of this.cells) {
