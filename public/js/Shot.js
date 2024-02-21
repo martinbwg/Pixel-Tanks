@@ -56,13 +56,23 @@ class Shot {
     return false;
   }
   update() {
-    this.oldx = this.x;
-    this.oldy = this.y;
     const time = Math.floor((Date.now()-this.e)/5), x = this.target?.x || time*this.xm+this.sx, y = this.target?.y || time*this.ym+this.sy;
-    let x1 = this.x
-    if (0|(this.x/100) !== 0|(x/100) || 0|(this.y/100) !== 0|(y/100) || 0|((this.x+10)/100) !== 0|((x+10)/100) || 0|((this.y+10)/100) !== 0|((y+10)/100)) {
-      for (let ) {
-        
+    let x1 = 0|(x/100), x2 = 0|((x+10)/100), y1 = 0|(y/100), y2 = 0|((y+10)/100);
+    if (0|(this.x/100) !== x1 || 0|(this.y/100) !== y2 || 0|((this.x+10)/100) !== x2 || 0|((this.y+10)/100) !== y2) {
+      for (const cell of this.cells) {
+        let c = cell.split('x'), xv = c[0], yv = c[1], has = false;
+        for (let x = x1; x < x2; x++) for (let y = y1; y < y2; y++) if (x === xv && y === yv) has = true;
+        if (!has) this.host.cells[xv][yv].delete(this);
+      }
+      for (let x = x1; x < x2; x++) for (let y = y1; y < y2; y++) {
+        for (const cell of this.cells) {
+          let c = cell.split('x'), xv = c[0], yv = c[1], has = false;
+          if (x === xv && y === yv) has = true;
+          if (!has) {
+            this.host.cells.add(this);
+            this.cells.add(x+'x'+y);
+          }
+        }
       }
     }
     this.x = x;
@@ -81,11 +91,11 @@ class Shot {
       }
       this.cells = cells;
     }
-    if (this.collision() || (this.target && (this.target?.ded || this.host.pt.find(t => t.username === Engine.getUsername(this.team))?.ded))) this.destroy();
+    if (this.collision() || (this.target && (this.target?.ded || this.host.pt.find(t => t.username === Engine.getUsername(this.team))?.ded))) return this.destroy();
     if (this.type === 'shotgun') {
-      this.d = Math.sqrt((this.x - this.sx) ** 2 + (this.y - this.sy) ** 2);
-      this.damage = this.md - (this.d / 300) * this.md;  
-      if (this.d >= 300) this.destroy();
+      this.d = Math.sqrt((this.x-this.sx)**2+(this.y-this.sy)**2);
+      if (this.d >= 300) return this.destroy();
+      this.damage = (1-this.d/300)*this.md;  
     } else if (this.type === 'dynamite') this.r += 5;
   }
   setValue(p, v) {
@@ -95,8 +105,8 @@ class Shot {
   destroy() {
     this.host.s.splice(this.host.s.indexOf(this), 1);
     for (const cell of this.cells) {
-      const [x, y] = cell.split('x');
-      this.host.cells[x][y].delete(this);
+      const c = cell.split('x');
+      this.host.cells[c[0]][c[1]].delete(this);
     }
   }
 }
