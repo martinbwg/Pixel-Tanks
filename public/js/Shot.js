@@ -16,7 +16,7 @@ class Shot {
     for (let x = Math.max(0, Math.min(29, Math.floor(this.x/100)); x <= Math.max(0, Math.min(29, Math.floor((this.x+10)/100))); x++) {
       for (let y = Math.max(0, Math.min(29, Math.floor(this.y/100)); y <= Math.max(0, Math.min(29, Math.floor((this.y+10)/100))); y++) {
         host.cells[x][y].add(this);
-        this.cells.add(x+'x'+y);
+        this.cells.add(`${x}x${y}`);
       }
     }
     return this;
@@ -56,41 +56,23 @@ class Shot {
     return false;
   }
   update() {
-    const time = Math.floor((Date.now()-this.e)/5), x = this.target?.x || time*this.xm+this.sx, y = this.target?.y || time*this.ym+this.sy;
-    let x1 = 0|(x/100), x2 = 0|((x+10)/100), y1 = 0|(y/100), y2 = 0|((y+10)/100);
+    const time = Math.floor((Date.now()-this.e)/5), x = this.target?.x || time*this.xm+this.sx, y = this.target?.y || time*this.ym+this.sy, x1 = 0|(x/100), x2 = 0|((x+10)/100), y1 = 0|(y/100), y2 = 0|((y+10)/100);
     if (0|(this.x/100) !== x1 || 0|(this.y/100) !== y2 || 0|((this.x+10)/100) !== x2 || 0|((this.y+10)/100) !== y2) {
-      for (const cell of this.cells) {
-        let c = cell.split('x'), xv = c[0], yv = c[1], has = false;
-        for (let x = x1; x < x2; x++) for (let y = y1; y < y2; y++) if (x === xv && y === yv) has = true;
-        if (!has) this.host.cells[xv][yv].delete(this);
+      del: for (const cell of this.cells) {
+        let c = cell.split('x'), xv = c[0], yv = c[1];
+        for (let x = x1; x < x2; x++) for (let y = y1; y < y2; y++) if (x === xv && y === yv) continue del;
+        this.host.cells[xv][yv].delete(this);
+        this.cells.delete(`${xv}x${yv}`);
       }
       for (let x = x1; x < x2; x++) for (let y = y1; y < y2; y++) {
-        for (const cell of this.cells) {
-          let c = cell.split('x'), xv = c[0], yv = c[1], has = false;
-          if (x === xv && y === yv) has = true;
-          if (!has) {
-            this.host.cells.add(this);
-            this.cells.add(x+'x'+y);
-          }
+        if (!this.cells.has(x+'x'+y)) {
+          this.host.cells[x][y].add(this);
+          this.cells.add(`${x}x${y}`);
         }
       }
     }
     this.x = x;
     this.y = y;
-    
-    if (Math.floor(this.oldx/100) !== Math.floor(this.x/100) || Math.floor(this.oldy/100) !== Math.floor(this.y/100) || Math.floor((this.oldx+10)/100) !== Math.floor((this.x+10)/100) || Math.floor((this.oldy+10)/100) !== Math.floor((this.y+10)/100)) { 
-      const cells = new Set();
-      for (let dx = this.x/100, dy = this.y/100, i = 0; i < 4; i++) {
-        const cx = Math.max(0, Math.min(29, Math.floor(i < 2 ? dx : dx + .09))), cy = Math.max(0, Math.min(29, Math.floor(i % 2 ? dy : dy + .09)));
-        this.host.cells[cx][cy].add(this);
-        cells.add(cx+'x'+cy);
-      }
-      for (const cell of [...this.cells].filter(c => !cells.has(c))) {
-        const [x, y] = cell.split('x');
-        this.host.cells[x][y].delete(this);
-      }
-      this.cells = cells;
-    }
     if (this.collision() || (this.target && (this.target?.ded || this.host.pt.find(t => t.username === Engine.getUsername(this.team))?.ded))) return this.destroy();
     if (this.type === 'shotgun') {
       this.d = Math.sqrt((this.x-this.sx)**2+(this.y-this.sy)**2);
