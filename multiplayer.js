@@ -533,10 +533,10 @@ const Commands = {
   }],
   ban: [Object, 2, 2, function(data) {
     if (settings.admins.includes(data[1]) || settings.full_auth.includes(data[1])) return this.send({status: 'error', message: `You can't ban another admin!`});
-    settings.bans.push(data[1]);
-    servers[this.room].logs.push({m: data[1]+' was banned by '+this.username, c: '#FF0000'});
-    servers[this.room].pt.find(t => t.username === data[1]).socket.send({status: 'error', message: 'You are banned!'});
-    for (const socket of sockets) if (socket.username === data[1]) setTimeout(() => socket.close());
+    settings.bans.push({username: data[1], sessionId: this.sessionId});
+    servers[this.room].logs.push({m: data[1]+' was banned by '+this.username+' (Session ID: '+this.sessionId+')', c: '#FF0000'});
+    servers[this.room].pt.find(t => t.username === data[1] && t.sessionId === this.sessionId).socket.send({status: 'error', message: 'You are banned!'});
+    for (const socket of sockets) if (socket.username === data[1] && socket.sessionId === this.sessionId) setTimeout(() => socket.close());
   }],
   banlist: [Object, 2, 2, function(data) {
     const t = servers[this.room].pt.find(t => t.username === this.username);
@@ -742,6 +742,18 @@ const multimessage = (socket, data) => {
     for (const id in servers) {
       gamemodes[servers[id].constructor.name][id] = [];
       for (const pt of servers[id].pt) {
+    // Generate a unique session ID for the player
+    const sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    data.tank.sessionId = sessionId;
+    socket.sessionId = sessionId;
+    // Store the session ID with the player's information
+    servers[server].pt.forEach(player => {
+      if (player.username === data.tank.username) {
+        player.sessionId = sessionId;
+      }
+    });
+    // Notify admin or affected players about the session ID assignment
+    servers[server].logs.push({m: 'Session ID ' + sessionId + ' assigned to ' + data.tank.username, c: '#00FF00'});
         gamemodes[servers[id].constructor.name][id].push(pt.username);
       }
     }
